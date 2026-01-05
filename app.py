@@ -4,30 +4,18 @@ import os
 import requests
 
 app = Flask(__name__)
+CORS(app)  # VERY IMPORTANT for Vercel → Render
 
-# ---- CORS (CRITICAL) ----
-CORS(
-    app,
-    resources={r"/*": {"origins": "*"}},
-    methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"]
-)
-
-# ---- Groq Config ----
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SYSTEM_PROMPT = """
 You are an AI-native ingredient understanding copilot.
-
-Your goal is not to list ingredients or act as a database.
-Instead:
-- Explain why certain ingredients matter
-- Surface trade-offs (health, taste, cost, processing)
-- Clearly communicate uncertainty when information is incomplete
-- Reduce cognitive load for the user
-
-Prefer reasoning and explanation over factual exhaustiveness.
+Reduce cognitive load.
+Explain trade-offs.
+Communicate uncertainty.
+Do NOT list ingredients.
+Do NOT act as a database.
 """
 
 @app.route("/chat", methods=["POST"])
@@ -50,17 +38,14 @@ def chat():
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json"
         },
-        json=payload,
-        timeout=30
+        json=payload
     )
 
-    response.raise_for_status()
     result = response.json()
-
     return jsonify(result["choices"][0]["message"])
 
-# ---- Render-compatible entry ----
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
+
 
